@@ -20,6 +20,7 @@ interface StoredResultData extends CurrentQuizData {
 export function QuizResultsDisplay() {
   const [result, setResult] = useState<StoredResultData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false); // New state for navigation loading
   const router = useRouter();
   const { toast } = useToast();
 
@@ -50,11 +51,20 @@ export function QuizResultsDisplay() {
         router.push("/"); // Redirect if data is malformed
       }
     } else {
-      toast({ title: "No Results Found", description: "Redirecting to home.", variant: "default" });
-      router.push("/"); // Redirect if no data
+      // Only show "No Results Found" toast if not already loading and result isn't set yet.
+      // This avoids showing it on initial load if data is eventually found or if redirected for other reasons.
+      if (!isLoading && !result) {
+         toast({ title: "No Results Found", description: "Redirecting to home.", variant: "default" });
+         router.push("/"); // Redirect if no data
+      }
     }
     setIsLoading(false);
-  }, [router, toast]);
+  }, [router, toast, isLoading, result]); // Added isLoading and result to dependency array for better control of toast message
+
+  const handleNavigation = (path: string) => {
+    setIsNavigating(true);
+    router.push(path);
+  };
 
   if (isLoading) {
     return (
@@ -74,7 +84,14 @@ export function QuizResultsDisplay() {
           <p>Quiz results could not be loaded. You might have already viewed them or there was an error.</p>
         </CardContent>
         <CardFooter>
-          <Button onClick={() => router.push("/")}><Home className="mr-2 h-4 w-4" /> Go Home</Button>
+          <Button onClick={() => handleNavigation("/")} disabled={isNavigating}>
+            {isNavigating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Home className="mr-2 h-4 w-4" />
+            )}
+            Go Home
+          </Button>
         </CardFooter>
       </Card>
     );
@@ -156,11 +173,21 @@ export function QuizResultsDisplay() {
 
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
-        <Button onClick={() => router.push("/")} variant="outline" size="lg">
-          <Home className="mr-2 h-4 w-4" /> Go Home
+        <Button onClick={() => handleNavigation("/")} variant="outline" size="lg" disabled={isNavigating}>
+          {isNavigating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Home className="mr-2 h-4 w-4" />
+          )}
+          Go Home
         </Button>
-        <Button onClick={() => router.push("/")} size="lg">
-          <RotateCcw className="mr-2 h-4 w-4" /> Take Another Quiz
+        <Button onClick={() => handleNavigation("/")} size="lg" disabled={isNavigating}>
+          {isNavigating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <RotateCcw className="mr-2 h-4 w-4" />
+          )}
+          Take Another Quiz
         </Button>
       </CardFooter>
     </Card>

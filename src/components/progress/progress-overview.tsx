@@ -1,3 +1,4 @@
+
 // @/components/progress/progress-overview.tsx
 "use client";
 
@@ -7,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { LOCAL_STORAGE_PROGRESS_KEY } from "@/lib/constants";
-import type { QuizAttempt } from "@/types";
+import type { QuizAttempt, QuestionWithAnswer } from "@/types";
 import { format } from "date-fns";
 import { BarChart3, CheckCircle, ListChecks, Star, TrendingDown, TrendingUp } from "lucide-react";
 
@@ -20,9 +21,17 @@ export function ProgressOverview() {
     const storedProgress = localStorage.getItem(LOCAL_STORAGE_PROGRESS_KEY);
     if (storedProgress) {
       try {
-        const parsedProgress = JSON.parse(storedProgress);
+        const parsedProgress = JSON.parse(storedProgress) as QuizAttempt[];
         // Basic validation to ensure it's an array and items have expected structure
-        if (Array.isArray(parsedProgress) && parsedProgress.every(item => typeof item === 'object' && item !== null && 'id' in item && 'analysis' in item && 'questions' in item && 'answers' in item)) {
+        if (Array.isArray(parsedProgress) && parsedProgress.every(item => 
+            typeof item === 'object' && 
+            item !== null && 
+            'id' in item && 
+            'analysis' in item && 
+            Array.isArray(item.questions) && 
+            item.questions.every(q => typeof q.question === 'string' && typeof q.correctAnswer === 'string') && // Validate question structure
+            Array.isArray(item.answers)
+          )) {
           setProgress(parsedProgress);
         } else {
           console.warn("Malformed progress data in localStorage. Clearing it.");
@@ -120,10 +129,12 @@ export function ProgressOverview() {
                       <details className="mt-2">
                         <summary className="text-sm font-medium text-primary cursor-pointer hover:underline">Show Questions & Answers</summary>
                         <ul className="mt-2 space-y-2 pl-4 text-xs">
-                          {attempt.questions.map((q, i) => (
+                          {attempt.questions.map((q: QuestionWithAnswer, i: number) => (
                             <li key={i} className="p-2 border rounded-md bg-muted/50">
-                              <p><strong>Q:</strong> {q}</p>
+                              <p><strong>Q:</strong> {q.question}</p>
                               <p className="text-muted-foreground"><strong>Your Answer:</strong> {(attempt.answers && attempt.answers[i]) || "Not answered"}</p>
+                              {/* Optionally, show correct answer here too if desired for progress review */}
+                              {/* <p className="text-primary"><strong>Correct Answer:</strong> {q.correctAnswer}</p> */}
                             </li>
                           ))}
                         </ul>
@@ -139,3 +150,4 @@ export function ProgressOverview() {
     </Card>
   );
 }
+

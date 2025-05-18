@@ -13,6 +13,7 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
   title: "Math Whiz",
   description: "Year 7 Math Quizzes by Math Whiz",
+  icons: null, // Explicitly state no icons are provided via metadata
 };
 
 export default function RootLayout({

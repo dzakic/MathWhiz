@@ -1,7 +1,18 @@
 import { TopicSelector } from "@/components/quiz/topic-selector";
 import Image from "next/image";
+import { generateImageAction } from "@/actions/imageActions";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const imagePrompt = "Vibrant digital illustration of a young, wide-eyed math whiz kid (around 10-12 years old) having an 'aha!' moment. A glowing lightbulb hovers above their head. Friendly, approachable style. Simple, cheerful background. Aspect ratio 2:1, suitable for 600x300 display.";
+  let imageUrl: string;
+
+  try {
+    imageUrl = await generateImageAction(imagePrompt);
+  } catch (error) {
+    console.error("Failed to generate image for homepage:", error);
+    imageUrl = "https://placehold.co/600x300.png?text=Error+Loading+Image"; // Fallback
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col items-center">
       <header className="text-center mb-12">
@@ -15,12 +26,13 @@ export default function HomePage() {
       
       <div className="w-full flex justify-center mb-12">
          <Image 
-            src="https://placehold.co/600x300.png" 
-            alt="Math illustration" 
+            src={imageUrl} 
+            alt="Math Whiz kid with a brilliant idea" 
             width={600} 
             height={300} 
             className="rounded-lg shadow-xl"
-            data-ai-hint="math education" 
+            data-ai-hint="genius kid idea" 
+            priority 
           />
       </div>
 

@@ -19,7 +19,21 @@ export function ProgressOverview() {
     setMounted(true);
     const storedProgress = localStorage.getItem(LOCAL_STORAGE_PROGRESS_KEY);
     if (storedProgress) {
-      setProgress(JSON.parse(storedProgress));
+      try {
+        const parsedProgress = JSON.parse(storedProgress);
+        // Basic validation to ensure it's an array and items have expected structure
+        if (Array.isArray(parsedProgress) && parsedProgress.every(item => typeof item === 'object' && item !== null && 'id' in item && 'analysis' in item && 'questions' in item && 'answers' in item)) {
+          setProgress(parsedProgress);
+        } else {
+          console.warn("Malformed progress data in localStorage. Clearing it.");
+          localStorage.removeItem(LOCAL_STORAGE_PROGRESS_KEY);
+          setProgress([]);
+        }
+      } catch (error) {
+        console.error("Error parsing progress data from localStorage:", error);
+        localStorage.removeItem(LOCAL_STORAGE_PROGRESS_KEY); // Clear corrupted data
+        setProgress([]);
+      }
     }
   }, []);
 
@@ -71,7 +85,9 @@ export function ProgressOverview() {
         <ScrollArea className="h-[600px] pr-4">
           <Accordion type="multiple" className="w-full space-y-4">
             {progress.map((attempt) => {
-              const scoreColor = attempt.analysis.overallScore >= 70 ? "bg-green-500" : attempt.analysis.overallScore >= 40 ? "bg-yellow-500" : "bg-red-500";
+              // Ensure analysis and overallScore exist to prevent runtime errors
+              const overallScore = attempt.analysis?.overallScore ?? 0;
+              const scoreColor = overallScore >= 70 ? "bg-green-500" : overallScore >= 40 ? "bg-yellow-500" : "bg-red-500";
               return (
                 <AccordionItem key={attempt.id} value={attempt.id} className="border rounded-lg shadow-sm bg-card overflow-hidden">
                   <AccordionTrigger className="p-4 hover:no-underline text-left">
@@ -83,7 +99,7 @@ export function ProgressOverview() {
                         </p>
                       </div>
                       <Badge className={`text-base px-3 py-1 text-white ${scoreColor}`}>
-                        Score: {attempt.analysis.overallScore}%
+                        Score: {overallScore}%
                       </Badge>
                     </div>
                   </AccordionTrigger>
@@ -91,15 +107,15 @@ export function ProgressOverview() {
                     <div className="space-y-3">
                       <div>
                         <h4 className="font-semibold flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-green-500" />Strengths:</h4>
-                        <p className="text-sm text-muted-foreground pl-6">{attempt.analysis.strengths}</p>
+                        <p className="text-sm text-muted-foreground pl-6">{attempt.analysis?.strengths || "N/A"}</p>
                       </div>
                       <div>
                         <h4 className="font-semibold flex items-center"><TrendingDown className="mr-2 h-4 w-4 text-red-500" />Weaknesses:</h4>
-                        <p className="text-sm text-muted-foreground pl-6">{attempt.analysis.weaknesses}</p>
+                        <p className="text-sm text-muted-foreground pl-6">{attempt.analysis?.weaknesses || "N/A"}</p>
                       </div>
                       <div>
                         <h4 className="font-semibold flex items-center"><TrendingUp className="mr-2 h-4 w-4 text-blue-500" />Topics to Focus On:</h4>
-                        <p className="text-sm text-muted-foreground pl-6">{attempt.analysis.topicsToFocusOn}</p>
+                        <p className="text-sm text-muted-foreground pl-6">{attempt.analysis?.topicsToFocusOn || "N/A"}</p>
                       </div>
                       <details className="mt-2">
                         <summary className="text-sm font-medium text-primary cursor-pointer hover:underline">Show Questions & Answers</summary>
@@ -107,7 +123,7 @@ export function ProgressOverview() {
                           {attempt.questions.map((q, i) => (
                             <li key={i} className="p-2 border rounded-md bg-muted/50">
                               <p><strong>Q:</strong> {q}</p>
-                              <p className="text-muted-foreground"><strong>Your Answer:</strong> {attempt.userAnswers[i] || "Not answered"}</p>
+                              <p className="text-muted-foreground"><strong>Your Answer:</strong> {(attempt.answers && attempt.answers[i]) || "Not answered"}</p>
                             </li>
                           ))}
                         </ul>

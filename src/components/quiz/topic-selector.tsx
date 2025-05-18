@@ -1,3 +1,4 @@
+
 // @/components/quiz/topic-selector.tsx
 "use client";
 
@@ -8,15 +9,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { MATH_TOPICS, NUM_QUESTIONS_OPTIONS, MathTopic, NumQuestionsOption } from "@/lib/constants";
-import { BookOpen, PlayCircle } from "lucide-react";
+import { BookOpen, PlayCircle, Loader2 } from "lucide-react"; // Added Loader2
 
 export function TopicSelector() {
   const [selectedTopic, setSelectedTopic] = useState<MathTopic | undefined>(undefined);
   const [numQuestions, setNumQuestions] = useState<NumQuestionsOption>(NUM_QUESTIONS_OPTIONS[0]);
+  const [isLoading, setIsLoading] = useState<boolean>(false); // Added isLoading state
   const router = useRouter();
 
   const handleStartQuiz = () => {
     if (selectedTopic) {
+      setIsLoading(true); // Set loading to true
+      // The router.push will navigate away, so no need to manually set isLoading to false
+      // unless there's a specific error handling scenario where navigation might fail and
+      // the user stays on this page.
       router.push(`/quiz/${selectedTopic.toLowerCase()}?numQuestions=${numQuestions}`);
     }
   };
@@ -36,6 +42,7 @@ export function TopicSelector() {
           <Select
             value={selectedTopic}
             onValueChange={(value) => setSelectedTopic(value as MathTopic)}
+            disabled={isLoading} // Disable select while loading
           >
             <SelectTrigger id="topic-select" className="w-full text-base py-6">
               <SelectValue placeholder="Select a math topic" />
@@ -54,6 +61,7 @@ export function TopicSelector() {
           <Select
             value={String(numQuestions)}
             onValueChange={(value) => setNumQuestions(Number(value) as NumQuestionsOption)}
+            disabled={isLoading} // Disable select while loading
           >
             <SelectTrigger id="num-questions-select" className="w-full text-base py-6">
               <SelectValue />
@@ -71,12 +79,21 @@ export function TopicSelector() {
       <CardFooter>
         <Button
           onClick={handleStartQuiz}
-          disabled={!selectedTopic}
+          disabled={!selectedTopic || isLoading} // Disable button if no topic or if loading
           className="w-full text-lg py-7"
           size="lg"
         >
-          <PlayCircle className="mr-2 h-5 w-5" />
-          Start Quiz
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Loading Quiz...
+            </>
+          ) : (
+            <>
+              <PlayCircle className="mr-2 h-5 w-5" />
+              Start Quiz
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>

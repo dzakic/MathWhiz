@@ -12,16 +12,16 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { analyzePerformanceAction } from "@/actions/quizActions";
 import { STUDENT_NAME, MathTopic, LOCAL_STORAGE_CURRENT_RESULT_KEY } from "@/lib/constants";
-import type { CurrentQuizData, QuizQuestionFormat } from "@/types";
+import type { CurrentQuizData, QuizQuestionFormat, QuestionWithAnswer } from "@/types";
 
 interface QuizFormProps {
   topic: MathTopic;
-  initialQuestions: string[];
+  initialQuestions: QuestionWithAnswer[];
   numQuestions: number;
 }
 
 export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProps) {
-  const [questions, setQuestions] = useState<string[]>(initialQuestions);
+  const [questions, setQuestions] = useState<QuestionWithAnswer[]>(initialQuestions);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<string[]>(new Array(numQuestions).fill(""));
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +29,6 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
   const { toast } = useToast();
 
   useEffect(() => {
-    // Clear any previous result from local storage when a new quiz starts
     localStorage.removeItem(LOCAL_STORAGE_CURRENT_RESULT_KEY);
   }, []);
 
@@ -55,8 +54,9 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
     setIsLoading(true);
     try {
       const quizDataForAnalysis: QuizQuestionFormat[] = questions.map((q, i) => ({
-        question: q,
-        studentAnswer: answers[i] || "Not answered", // Provide a default for unanswered questions
+        question: q.question,
+        studentAnswer: answers[i] || "Not answered",
+        correctAnswer: q.correctAnswer,
       }));
       
       const analysis = await analyzePerformanceAction(
@@ -67,8 +67,8 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
       const currentQuizResult: CurrentQuizData & { analysis: any } = {
         topic,
         numQuestions,
-        questions,
-        answers,
+        questions, // This is QuestionWithAnswer[]
+        answers, // These are student's answers
         studentName: STUDENT_NAME,
         analysis,
       };
@@ -94,8 +94,13 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
     }
   };
 
-  if (!questions.length) {
-    return <Card><CardContent><p>No questions loaded. Please try starting a new quiz.</p></CardContent></Card>;
+  if (!questions.length || !questions[currentQuestionIndex]) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Error</CardTitle></CardHeader>
+        <CardContent><p>No questions loaded or current question is invalid. Please try starting a new quiz.</p></CardContent>
+      </Card>
+    );
   }
 
   const progressPercentage = ((currentQuestionIndex + 1) / questions.length) * 100;
@@ -111,7 +116,7 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
         <form onSubmit={(e) => e.preventDefault()}>
           <div className="space-y-4">
             <Label htmlFor="answer" className="text-lg font-semibold">
-              {questions[currentQuestionIndex]}
+              {questions[currentQuestionIndex].question}
             </Label>
             <Input
               id="answer"
@@ -120,7 +125,7 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
               onChange={handleAnswerChange}
               placeholder="Your answer"
               className="text-base py-6"
-              aria-label={`Answer for question: ${questions[currentQuestionIndex]}`}
+              aria-label={`Answer for question: ${questions[currentQuestionIndex].question}`}
             />
           </div>
         </form>

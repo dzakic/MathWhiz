@@ -5,6 +5,7 @@ import { QuizForm } from "@/components/quiz/quiz-form";
 import { MATH_TOPICS, MathTopic, NUM_QUESTIONS_OPTIONS } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import type { QuestionWithAnswer } from '@/types';
 
 interface QuizPageParams {
   topic: string;
@@ -17,7 +18,7 @@ interface QuizPageProps {
 
 async function QuizContent({ topic, numQuestions }: { topic: MathTopic, numQuestions: number }) {
   try {
-    const { questions } = await generateQuestionsAction(topic, numQuestions);
+    const { questions }: { questions: QuestionWithAnswer[] } = await generateQuestionsAction(topic, numQuestions);
     if (!questions || questions.length === 0) {
       return (
         <Card className="w-full max-w-2xl mx-auto shadow-xl">
@@ -28,6 +29,21 @@ async function QuizContent({ topic, numQuestions }: { topic: MathTopic, numQuest
           </CardHeader>
           <CardContent>
             <p>Could not load questions for {topic}. The AI might be busy or the topic might not have generated questions. Please try again later or select a different topic.</p>
+          </CardContent>
+        </Card>
+      );
+    }
+    // Additional check for malformed questions (e.g. missing question text or answer)
+    if (questions.some(q => !q.question || !q.correctAnswer)) {
+       return (
+        <Card className="w-full max-w-2xl mx-auto shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center text-destructive">
+              <AlertTriangle className="mr-2 h-5 w-5" /> Error Loading Quiz
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Some questions for {topic} were not generated correctly by the AI. Please try again later or select a different topic.</p>
           </CardContent>
         </Card>
       );
@@ -43,7 +59,7 @@ async function QuizContent({ topic, numQuestions }: { topic: MathTopic, numQuest
             </CardTitle>
         </CardHeader>
         <CardContent>
-          <p>An unexpected error occurred while loading questions for {topic}. Please try refreshing the page or select a different topic.</p>
+          <p>An unexpected error occurred while loading questions for {topic}: {(error as Error).message || "Unknown error"}. Please try refreshing the page or select a different topic.</p>
         </CardContent>
       </Card>
     );
@@ -84,7 +100,6 @@ export default async function QuizPage({ params, searchParams }: QuizPageProps) 
   );
 }
 
-// Dynamic metadata for quiz page
 export async function generateMetadata({ params }: QuizPageProps) {
   const topic = params.topic.charAt(0).toUpperCase() + params.topic.slice(1);
   return {

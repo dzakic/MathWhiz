@@ -1,3 +1,4 @@
+
 // @/components/quiz/quiz-results-display.tsx
 "use client";
 
@@ -8,13 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Award, BookOpen, Home, Lightbulb, Loader2, RotateCcw, Target, TrendingDown, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Award, Home, Lightbulb, Loader2, RotateCcw, Target, TrendingDown, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
 import { LOCAL_STORAGE_CURRENT_RESULT_KEY, LOCAL_STORAGE_PROGRESS_KEY } from "@/lib/constants";
 import type { QuizAttempt, CurrentQuizData, QuestionWithAnswer } from "@/types";
 import type { AnalyzeStudentPerformanceOutput } from "@/ai/flows/analyze-student-performance";
 
 interface StoredResultData extends Omit<CurrentQuizData, 'questions'> {
-  questions: QuestionWithAnswer[]; // Ensure this uses the updated type
+  questions: QuestionWithAnswer[];
   analysis: AnalyzeStudentPerformanceOutput;
 }
 
@@ -30,7 +31,6 @@ export function QuizResultsDisplay() {
     if (storedResult) {
       try {
         const parsedResult: StoredResultData = JSON.parse(storedResult);
-        // Validate structure, especially questions array
         if (!Array.isArray(parsedResult.questions) || !parsedResult.questions.every(q => typeof q.question === 'string' && typeof q.correctAnswer === 'string')) {
           throw new Error("Malformed question data in stored results.");
         }
@@ -95,9 +95,7 @@ export function QuizResultsDisplay() {
   }
 
   const { topic, analysis, questions, answers: userAnswers } = result;
-  // Determine score color based on primary, accent, or destructive for better theme consistency
   const scoreColorClass = analysis.overallScore >= 70 ? "text-primary" : analysis.overallScore >= 40 ? "text-accent" : "text-destructive";
-
 
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-xl">
@@ -160,16 +158,38 @@ export function QuizResultsDisplay() {
             </AccordionTrigger>
             <AccordionContent>
               <ul className="space-y-4 mt-2">
-                {questions.map((q, i) => (
-                  <li key={i} className="p-3 border rounded-md bg-secondary/30">
-                    <p className="font-medium text-sm"><strong>Q:</strong> {q.question}</p>
-                    <p className="text-sm text-muted-foreground"><strong>Your Answer:</strong> {userAnswers[i] || "Not answered"}</p>
-                    <p className="text-sm font-semibold text-[hsl(var(--primary))] flex items-center">
-                      <CheckCircle2 className="mr-1 h-4 w-4" />
-                      <strong>Correct Answer:</strong>&nbsp;{q.correctAnswer}
-                    </p>
-                  </li>
-                ))}
+                {questions.map((q, i) => {
+                  const userAnswer = userAnswers[i] || "Not answered";
+                  const isCorrect = q.correctAnswer && userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+
+                  return (
+                    <li key={i} className="p-4 border rounded-lg bg-card space-y-2 shadow-sm">
+                      <p className="font-semibold text-base"><strong>Q:</strong> {q.question}</p>
+                      
+                      <div className="flex items-start text-sm">
+                        {isCorrect ? (
+                          <CheckCircle2 className="mr-2 mt-0.5 h-5 w-5 text-green-500 flex-shrink-0" />
+                        ) : (
+                          <XCircle className="mr-2 mt-0.5 h-5 w-5 text-destructive flex-shrink-0" />
+                        )}
+                        <div>
+                          <span className="font-semibold mr-1">Your Answer:</span>
+                          <span className={isCorrect ? 'text-green-700 dark:text-green-300' : 'text-destructive'}>{userAnswer}</span>
+                        </div>
+                      </div>
+
+                      {!isCorrect && q.correctAnswer && (
+                        <div className="flex items-start text-sm text-primary pl-[28px]"> {/* Approx icon width + margin */}
+                          <Lightbulb className="mr-2 mt-0.5 h-5 w-5 text-primary flex-shrink-0" /> 
+                          <div>
+                            <span className="font-semibold mr-1">Correct Answer:</span>
+                            <span>{q.correctAnswer}</span>
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </AccordionContent>
           </AccordionItem>

@@ -34,7 +34,7 @@ const analyzeStudentPerformancePrompt = ai.definePrompt({
   name: 'analyzeStudentPerformancePrompt',
   input: {schema: AnalyzeStudentPerformanceInputSchema},
   output: {schema: AnalyzeStudentPerformanceOutputSchema},
-  prompt: `You are an AI expert in analyzing student performance on math quizzes. You are provided with data from a quiz, including the student's answers and the correct answers for each question.
+  prompt: `You are an AI expert in analyzing student performance on math quizzes. You are provided with data from a quiz, including the student's answers and the correct answers for each question. Speak directly to the student when identifying strengths and weaknesses.
 
 Analyze the quiz data for the student {{studentName}}. The quiz data is a JSON array of objects, where each object contains "question", "studentAnswer", and "correctAnswer".
 

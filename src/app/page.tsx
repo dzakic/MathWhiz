@@ -3,7 +3,7 @@ import Image from "next/image";
 import { generateImageAction } from "@/actions/imageActions";
 
 export default async function HomePage() {
-  const imagePrompt = "Vibrant digital illustration of a young, wide-eyed math whiz kid (around 10-12 years old) having an 'aha!' moment. A glowing lightbulb hovers above their head. Friendly, approachable style. Simple, cheerful background. Aspect ratio 2:1, suitable for 600x300 display.";
+  const imagePrompt = "Vibrant digital illustration of a diverse group of young, enthusiastic math whiz kids (around 10-12 years old) excitedly sharing an 'aha!' moment, ideas sparking around them like little comets. Glowing lightbulbs and mathematical symbols float whimsically. Friendly, approachable, dynamic style. Simple, cheerful background. Aspect ratio 2:1, suitable for 600x300 display.";
   let imageUrl: string;
 
   try {
@@ -27,11 +27,11 @@ export default async function HomePage() {
       <div className="w-full flex justify-center mb-12">
          <Image 
             src={imageUrl} 
-            alt="Math Whiz kid with a brilliant idea" 
+            alt="Enthusiastic Math Whiz kids with brilliant ideas" 
             width={600} 
             height={300} 
             className="rounded-lg shadow-xl"
-            data-ai-hint="genius kid idea" 
+            data-ai-hint="enthusiastic kids learning" 
             priority 
           />
       </div>

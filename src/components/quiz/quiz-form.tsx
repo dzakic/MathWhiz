@@ -1,7 +1,8 @@
+
 // @/components/quiz/quiz-form.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,10 +28,15 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     localStorage.removeItem(LOCAL_STORAGE_CURRENT_RESULT_KEY);
   }, []);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [currentQuestionIndex]);
 
   const handleAnswerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAnswers = [...answers];
@@ -67,8 +73,8 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
       const currentQuizResult: CurrentQuizData & { analysis: any } = {
         topic,
         numQuestions,
-        questions, // This is QuestionWithAnswer[]
-        answers, // These are student's answers
+        questions, 
+        answers, 
         studentName: STUDENT_NAME,
         analysis,
       };
@@ -91,6 +97,17 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && !isLoading) {
+      event.preventDefault(); // Prevent default form submission if any
+      if (currentQuestionIndex < questions.length - 1) {
+        handleNext();
+      } else {
+        handleSubmit();
+      }
     }
   };
 
@@ -119,10 +136,12 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
               {questions[currentQuestionIndex].question}
             </Label>
             <Input
+              ref={inputRef}
               id="answer"
               type="text"
               value={answers[currentQuestionIndex]}
               onChange={handleAnswerChange}
+              onKeyDown={handleKeyDown}
               placeholder="Your answer"
               className="text-base py-6"
               aria-label={`Answer for question: ${questions[currentQuestionIndex].question}`}

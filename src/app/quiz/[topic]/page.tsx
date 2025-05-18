@@ -1,3 +1,4 @@
+
 // @/app/quiz/[topic]/page.tsx
 import { Suspense } from 'react';
 import { generateQuestionsAction } from "@/actions/quizActions";
@@ -12,8 +13,8 @@ interface QuizPageParams {
 }
 
 interface QuizPageProps {
-  params: QuizPageParams;
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: QuizPageParams; // This type describes the resolved shape
+  searchParams: { [key: string]: string | string[] | undefined }; // This type describes the resolved shape
 }
 
 async function QuizContent({ topic, numQuestions }: { topic: MathTopic, numQuestions: number }) {
@@ -67,9 +68,13 @@ async function QuizContent({ topic, numQuestions }: { topic: MathTopic, numQuest
 }
 
 export default async function QuizPage({ params, searchParams }: QuizPageProps) {
-  const topicParam = params.topic.charAt(0).toUpperCase() + params.topic.slice(1);
-  const numQuestionsParam = searchParams.numQuestions 
-    ? parseInt(searchParams.numQuestions as string) 
+  // Await params and searchParams before accessing their properties
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+
+  const topicParam = resolvedParams.topic.charAt(0).toUpperCase() + resolvedParams.topic.slice(1);
+  const numQuestionsParam = resolvedSearchParams.numQuestions
+    ? parseInt(resolvedSearchParams.numQuestions as string)
     : NUM_QUESTIONS_OPTIONS[0];
 
   if (!MATH_TOPICS.includes(topicParam as MathTopic)) {
@@ -101,7 +106,9 @@ export default async function QuizPage({ params, searchParams }: QuizPageProps) 
 }
 
 export async function generateMetadata({ params }: QuizPageProps) {
-  const topic = params.topic.charAt(0).toUpperCase() + params.topic.slice(1);
+  // Await params before accessing its properties
+  const resolvedParams = await params;
+  const topic = resolvedParams.topic.charAt(0).toUpperCase() + resolvedParams.topic.slice(1);
   return {
     title: `Math Whiz Quiz: ${topic}`,
     description: `Take a math quiz on ${topic}.`,

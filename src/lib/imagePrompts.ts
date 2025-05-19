@@ -1,0 +1,2 @@
+// @/lib/imagePrompts.ts
+export const MATH_WHIZ_HERO_PROMPT = "Vibrant digital illustration of a diverse group of young, enthusiastic math whiz kids (around 10-12 years old) excitedly sharing an 'aha!' moment, ideas sparking around them like little comets. Glowing lightbulbs and mathematical symbols float whimsically. Friendly, approachable, dynamic style. Simple, cheerful background. Aspect ratio 2:1, suitable for 600x300 display.";

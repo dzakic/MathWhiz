@@ -1,5 +1,5 @@
 // @/app/api/math-whiz-image/route.ts
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'; // NextResponse can be used, or standard Response
 import { ensureLatestImageFile } from '@/actions/imageActions';
 import { MATH_WHIZ_HERO_PROMPT } from '@/lib/imagePrompts';
 import fs from 'fs/promises';
@@ -10,7 +10,6 @@ export async function GET(request: Request) {
     const imageFilePath = await ensureLatestImageFile(MATH_WHIZ_HERO_PROMPT);
     const imageBuffer = await fs.readFile(imageFilePath);
     
-    // Determine content type from file extension, default to png
     const ext = path.extname(imageFilePath).toLowerCase();
     let contentType = 'image/png';
     if (ext === '.jpg' || ext === '.jpeg') {
@@ -21,18 +20,25 @@ export async function GET(request: Request) {
       contentType = 'image/webp';
     }
 
+    // Explicitly create a Headers object
+    const responseHeaders = new Headers();
+    responseHeaders.set('Content-Type', contentType);
+    responseHeaders.set('Cache-Control', 'public, max-age=86400'); // 24 hours
+
     return new Response(imageBuffer, {
       status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400', // 24 hours
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     console.error('Error serving math whiz image:', error);
-    // Fallback to a default placeholder image or error response
-    // For simplicity, returning a 500 error.
-    // A real placeholder image could be served here if one is statically available.
-    return new NextResponse('Error generating image.', { status: 500 });
+    // Fallback to a simple error response.
+    // Consider sending a placeholder image with appropriate cache headers if generation fails.
+    return new NextResponse('Error generating image.', { 
+      status: 500,
+      headers: {
+        'Content-Type': 'text/plain',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', // No caching for errors
+      }
+    });
   }
 }

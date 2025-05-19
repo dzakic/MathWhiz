@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { LOCAL_STORAGE_PROGRESS_KEY } from "@/lib/constants";
 import type { QuizAttempt, QuestionWithAnswer } from "@/types";
 import { format } from "date-fns";
-import { BarChart3, CheckCircle, ListChecks, Star, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart3, CheckCircle, ListChecks, Star, TrendingDown, TrendingUp, CheckCircle2, XCircle, Lightbulb } from "lucide-react"; // Added CheckCircle2, XCircle, Lightbulb
 
 export function ProgressOverview() {
   const [progress, setProgress] = useState<QuizAttempt[]>([]);
@@ -29,7 +29,7 @@ export function ProgressOverview() {
             'id' in item && 
             'analysis' in item && 
             Array.isArray(item.questions) && 
-            item.questions.every(q => typeof q.question === 'string' && typeof q.correctAnswer === 'string') && // Validate question structure
+            item.questions.every(q => typeof q === 'object' && q !== null && typeof q.question === 'string' && typeof q.correctAnswer === 'string') && // Validate question structure
             Array.isArray(item.answers)
           )) {
           setProgress(parsedProgress);
@@ -128,15 +128,39 @@ export function ProgressOverview() {
                       </div>
                       <details className="mt-2">
                         <summary className="text-sm font-medium text-primary cursor-pointer hover:underline">Show Questions & Answers</summary>
-                        <ul className="mt-2 space-y-2 pl-4 text-xs">
-                          {attempt.questions.map((q: QuestionWithAnswer, i: number) => (
-                            <li key={i} className="p-2 border rounded-md bg-muted/50">
-                              <p><strong>Q:</strong> {q.question}</p>
-                              <p className="text-muted-foreground"><strong>Your Answer:</strong> {(attempt.answers && attempt.answers[i]) || "Not answered"}</p>
-                              {/* Optionally, show correct answer here too if desired for progress review */}
-                              {/* <p className="text-primary"><strong>Correct Answer:</strong> {q.correctAnswer}</p> */}
-                            </li>
-                          ))}
+                        <ul className="mt-2 space-y-4 pl-2 sm:pl-4">
+                          {(attempt.questions || []).map((q: QuestionWithAnswer, i: number) => {
+                            const userAnswer = (attempt.answers && attempt.answers[i]) || "Not answered";
+                            const isCorrect = q.correctAnswer && userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+                            
+                            return (
+                              <li key={i} className="p-3 border rounded-md bg-card space-y-1 shadow-sm">
+                                <p className="font-semibold text-sm"><strong>Q:</strong> {q.question}</p>
+                                
+                                <div className="flex items-start text-sm">
+                                  {isCorrect ? (
+                                    <CheckCircle2 className="mr-2 mt-0.5 h-4 w-4 text-green-500 flex-shrink-0" />
+                                  ) : (
+                                    <XCircle className="mr-2 mt-0.5 h-4 w-4 text-destructive flex-shrink-0" />
+                                  )}
+                                  <div>
+                                    <span className="font-medium mr-1">Your Answer:</span>
+                                    <span className={isCorrect ? 'text-green-700 dark:text-green-400' : 'text-destructive'}>{userAnswer}</span>
+                                  </div>
+                                </div>
+
+                                {!isCorrect && q.correctAnswer && (
+                                  <div className="flex items-start text-sm text-primary pl-[24px]"> {/* Approx icon width + margin */}
+                                    <Lightbulb className="mr-2 mt-0.5 h-4 w-4 text-primary flex-shrink-0" /> 
+                                    <div>
+                                      <span className="font-medium mr-1">Correct Answer:</span>
+                                      <span>{q.correctAnswer}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </details>
                     </div>

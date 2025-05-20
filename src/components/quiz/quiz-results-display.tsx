@@ -11,11 +11,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { Award, Home, Lightbulb, Loader2, RotateCcw, Target, TrendingDown, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
 import { LOCAL_STORAGE_CURRENT_RESULT_KEY, LOCAL_STORAGE_PROGRESS_KEY } from "@/lib/constants";
-import type { QuizAttempt, CurrentQuizData, QuestionWithAnswer } from "@/types";
-import type { AnalyzeStudentPerformanceOutput } from "@/ai/flows/analyze-student-performance";
+import type { QuizAttempt, CurrentQuizData, QuestionWithAnswer, AnalyzeStudentPerformanceOutput, DetailedQuestionAnalysisItem } from "@/types";
 
-interface StoredResultData extends Omit<CurrentQuizData, 'questions'> {
-  questions: QuestionWithAnswer[];
+
+interface StoredResultData extends CurrentQuizData { // CurrentQuizData already includes questions and answers
   analysis: AnalyzeStudentPerformanceOutput;
 }
 
@@ -31,15 +30,43 @@ export function QuizResultsDisplay() {
     if (storedResult) {
       try {
         const parsedResult: StoredResultData = JSON.parse(storedResult);
-        if (!Array.isArray(parsedResult.questions) || !parsedResult.questions.every(q => typeof q.question === 'string' && typeof q.correctAnswer === 'string')) {
+        
+        // Validate base structure
+        if (!parsedResult || typeof parsedResult !== 'object' || !Array.isArray(parsedResult.questions)) {
+          throw new Error("Malformed stored result data.");
+        }
+        // Validate questions array
+        if (parsedResult.questions.some(q => typeof q.question !== 'string' || typeof q.correctAnswer !== 'string')) {
           throw new Error("Malformed question data in stored results.");
         }
+        // Validate AI analysis structure
+        if (!parsedResult.analysis || 
+            !parsedResult.analysis.detailedQuestionAnalysis || 
+            !Array.isArray(parsedResult.analysis.detailedQuestionAnalysis) || 
+            parsedResult.analysis.detailedQuestionAnalysis.length !== parsedResult.questions.length) {
+          throw new Error("AI analysis is missing, has malformed detailed question analysis, or question count mismatch.");
+        }
+        // Validate items within detailedQuestionAnalysis
+        if (parsedResult.analysis.detailedQuestionAnalysis.some(item =>
+            typeof item.question !== 'string' ||
+            typeof item.studentAnswer !== 'string' ||
+            typeof item.correctAnswer !== 'string' ||
+            typeof item.isStudentAnswerCorrect !== 'boolean'
+        )) {
+            throw new Error("Detailed question analysis items have incorrect structure or missing fields.");
+        }
+
         setResult(parsedResult);
 
         const newAttempt: QuizAttempt = {
-          ...parsedResult,
           id: new Date().toISOString() + Math.random().toString(36).substring(2, 9),
           date: new Date().toISOString(),
+          topic: parsedResult.topic,
+          numQuestions: parsedResult.numQuestions,
+          questions: parsedResult.questions,
+          answers: parsedResult.answers,
+          studentName: parsedResult.studentName,
+          analysis: parsedResult.analysis,
         };
 
         const progress = JSON.parse(localStorage.getItem(LOCAL_STORAGE_PROGRESS_KEY) || "[]") as QuizAttempt[];
@@ -54,13 +81,14 @@ export function QuizResultsDisplay() {
         router.push("/");
       }
     } else {
-      if (!isLoading && !result) {
-         toast({ title: "No Results Found", description: "Redirecting to home.", variant: "default" });
+      if (!isLoading && !result) { // Ensure this only runs if not loading and no result set
+         toast({ title: "No Results Found", description: "No quiz results available. Redirecting to home.", variant: "default" });
          router.push("/");
       }
     }
     setIsLoading(false);
-  }, [router, toast, isLoading, result]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Removed router, toast, isLoading, result from deps to prevent re-runs on their change after initial load.
 
   const handleNavigation = (path: string) => {
     setIsNavigating(true);
@@ -75,14 +103,15 @@ export function QuizResultsDisplay() {
     );
   }
 
-  if (!result) {
+  if (!result || !result.analysis || !result.analysis.detailedQuestionAnalysis) {
+    // This state could be reached if parsing failed or if initial result was null and toast/redirect didn't immediately unmount
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>No Results</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>Quiz results could not be loaded. You might have already viewed them or there was an error.</p>
+          <p>Quiz results could not be loaded or are incomplete. You might have already viewed them or there was an error.</p>
         </CardContent>
         <CardFooter>
           <Button onClick={() => handleNavigation("/")} disabled={isNavigating}>
@@ -94,7 +123,7 @@ export function QuizResultsDisplay() {
     );
   }
 
-  const { topic, analysis, questions, answers: userAnswers } = result;
+  const { topic, analysis } = result;
   const scoreColorClass = analysis.overallScore >= 70 ? "text-primary" : analysis.overallScore >= 40 ? "text-accent" : "text-destructive";
 
   return (
@@ -158,32 +187,31 @@ export function QuizResultsDisplay() {
             </AccordionTrigger>
             <AccordionContent>
               <ul className="space-y-4 mt-2">
-                {questions.map((q, i) => {
-                  const userAnswer = userAnswers[i] || "Not answered";
-                  const isCorrect = q.correctAnswer && userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+                {analysis.detailedQuestionAnalysis.map((item: DetailedQuestionAnalysisItem, i: number) => {
+                  const { question, studentAnswer, correctAnswer, isStudentAnswerCorrect } = item;
 
                   return (
                     <li key={i} className="p-4 border rounded-lg bg-card space-y-2 shadow-sm">
-                      <p className="font-semibold text-base"><strong>Q:</strong> {q.question}</p>
+                      <p className="font-semibold text-base"><strong>Q:</strong> {question}</p>
                       
                       <div className="flex items-start text-sm">
-                        {isCorrect ? (
+                        {isStudentAnswerCorrect ? (
                           <CheckCircle2 className="mr-2 mt-0.5 h-5 w-5 text-green-500 flex-shrink-0" />
                         ) : (
                           <XCircle className="mr-2 mt-0.5 h-5 w-5 text-destructive flex-shrink-0" />
                         )}
                         <div>
                           <span className="font-semibold mr-1">Your Answer:</span>
-                          <span className={isCorrect ? 'text-green-700 dark:text-green-300' : 'text-destructive'}>{userAnswer}</span>
+                          <span className={isStudentAnswerCorrect ? 'text-green-700 dark:text-green-300' : 'text-destructive'}>{studentAnswer || "Not answered"}</span>
                         </div>
                       </div>
 
-                      {!isCorrect && q.correctAnswer && (
+                      {!isStudentAnswerCorrect && correctAnswer && (
                         <div className="flex items-start text-sm text-primary pl-[28px]"> {/* Approx icon width + margin */}
                           <Lightbulb className="mr-2 mt-0.5 h-5 w-5 text-primary flex-shrink-0" /> 
                           <div>
                             <span className="font-semibold mr-1">Correct Answer:</span>
-                            <span>{q.correctAnswer}</span>
+                            <span>{correctAnswer}</span>
                           </div>
                         </div>
                       )}

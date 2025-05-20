@@ -39,15 +39,18 @@ const analyzeStudentPerformancePrompt = ai.definePrompt({
 Analyze the quiz data for the student {{studentName}}. The quiz data is a JSON array of objects, where each object contains "question", "studentAnswer", and "correctAnswer".
 
 Your tasks are:
-1.  **Calculate Overall Score**: Determine the number of questions the student answered correctly by comparing their "studentAnswer" to the "correctAnswer" for each question. The score should be (number of correct student answers / total number of questions) * 100. Round this score to the nearest integer. For comparison, treat answers as case-insensitive if appropriate for math (e.g. "4" is same as "4.0", but be strict with wording if it's not a numerical answer). Be reasonably flexible with minor formatting differences in numerical answers if the mathematical value is the same (e.g. "5.0" vs "5").
-2.  **Identify Strengths**: Based on the questions answered correctly, describe the student's strengths. Mention specific topics or types of problems if a pattern emerges.
-3.  **Identify Weaknesses**: Based on the questions answered incorrectly, describe the student's weaknesses. Mention specific topics or types of problems where the student struggled.
+1.  **Calculate Overall Score**: Determine the number of questions the student answered correctly. When comparing the "studentAnswer" to the "correctAnswer" for each question:
+    *   For numerical answers, be flexible. Consider the answer correct if the core numerical value is the same, even if there are minor differences in formatting (e.g., "4" vs "4.0" or "4.00"), inclusion/omission of units (e.g., "180" vs "180 degrees", "5cm" vs "5 cm" vs "5"), or slight variations in wording that don't change the mathematical meaning.
+    *   Treat comparisons as case-insensitive where appropriate (e.g., for textual parts of an answer).
+    *   The score should be (number of correct student answers / total number of questions) * 100. Round this score to the nearest integer.
+2.  **Identify Strengths**: Based on the questions answered correctly (using the flexible comparison rules above), describe the student's strengths. Mention specific topics or types of problems if a pattern emerges.
+3.  **Identify Weaknesses**: Based on the questions answered incorrectly (using the flexible comparison rules above), describe the student's weaknesses. Mention specific topics or types of problems where the student struggled.
 4.  **Suggest Topics to Focus On**: Provide a concise list of topics or concepts the student should focus on to improve their understanding and skills, directly derived from their incorrect answers.
 
 Here is the quiz data:
 {{quizData}}
 
-Respond with a JSON object matching the defined output schema.`,
+Respond with a JSON object matching the defined output schema. Ensure your analysis for strengths, weaknesses, and topics to focus on is based on the flexible answer evaluation.`,
 });
 
 const analyzeStudentPerformanceFlow = ai.defineFlow(

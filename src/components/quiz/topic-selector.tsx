@@ -8,22 +8,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { MATH_TOPICS, NUM_QUESTIONS_OPTIONS, MathTopic, NumQuestionsOption } from "@/lib/constants";
-import { BookOpen, PlayCircle, Loader2 } from "lucide-react"; // Added Loader2
+import { MATH_TOPICS, NUM_QUESTIONS_OPTIONS, type MathTopic, type NumQuestionsOption, type YearLevel } from "@/lib/constants";
+import { BookOpen, PlayCircle, Loader2 } from "lucide-react";
 
-export function TopicSelector() {
+interface TopicSelectorProps {
+  yearLevel: YearLevel;
+}
+
+export function TopicSelector({ yearLevel }: TopicSelectorProps) {
   const [selectedTopic, setSelectedTopic] = useState<MathTopic | undefined>(undefined);
   const [numQuestions, setNumQuestions] = useState<NumQuestionsOption>(NUM_QUESTIONS_OPTIONS[0]);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // Added isLoading state
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const handleStartQuiz = () => {
-    if (selectedTopic) {
-      setIsLoading(true); // Set loading to true
-      // The router.push will navigate away, so no need to manually set isLoading to false
-      // unless there's a specific error handling scenario where navigation might fail and
-      // the user stays on this page.
-      router.push(`/quiz/${selectedTopic.toLowerCase()}?numQuestions=${numQuestions}`);
+    if (selectedTopic && yearLevel) {
+      setIsLoading(true);
+      router.push(`/quiz/${selectedTopic.toLowerCase()}?numQuestions=${numQuestions}&year=${encodeURIComponent(yearLevel)}`);
     }
   };
 
@@ -32,9 +33,9 @@ export function TopicSelector() {
       <CardHeader>
         <CardTitle className="flex items-center text-2xl">
           <BookOpen className="mr-3 h-7 w-7 text-primary" />
-          Start a New Quiz
+          Select a Topic
         </CardTitle>
-        <CardDescription>Choose a topic and the number of questions to begin.</CardDescription>
+        <CardDescription>Choose a topic and the number of questions for {yearLevel}.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
@@ -42,7 +43,7 @@ export function TopicSelector() {
           <Select
             value={selectedTopic}
             onValueChange={(value) => setSelectedTopic(value as MathTopic)}
-            disabled={isLoading} // Disable select while loading
+            disabled={isLoading}
           >
             <SelectTrigger id="topic-select" className="w-full text-base py-6">
               <SelectValue placeholder="Select a math topic" />
@@ -61,7 +62,7 @@ export function TopicSelector() {
           <Select
             value={String(numQuestions)}
             onValueChange={(value) => setNumQuestions(Number(value) as NumQuestionsOption)}
-            disabled={isLoading} // Disable select while loading
+            disabled={isLoading}
           >
             <SelectTrigger id="num-questions-select" className="w-full text-base py-6">
               <SelectValue />
@@ -79,7 +80,7 @@ export function TopicSelector() {
       <CardFooter>
         <Button
           onClick={handleStartQuiz}
-          disabled={!selectedTopic || isLoading} // Disable button if no topic or if loading
+          disabled={!selectedTopic || isLoading}
           className="w-full text-lg py-7"
           size="lg"
         >

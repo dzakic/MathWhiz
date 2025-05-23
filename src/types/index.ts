@@ -1,17 +1,17 @@
-import type { MathTopic } from "@/lib/constants";
+
+import type { MathTopic, YearLevel } from "@/lib/constants"; // Added YearLevel
 
 export interface QuestionWithAnswer {
   question: string;
   correctAnswer: string;
 }
 
-export interface QuizQuestionFormat { // Used for sending data to analysis AI
+export interface QuizQuestionFormat {
   question: string;
   studentAnswer: string;
   correctAnswer: string;
 }
 
-// Represents the structure of each item in the detailed analysis from the AI
 export interface DetailedQuestionAnalysisItem {
   question: string;
   studentAnswer: string;
@@ -19,7 +19,6 @@ export interface DetailedQuestionAnalysisItem {
   isStudentAnswerCorrect: boolean;
 }
 
-// Updated AI output structure
 export interface AnalyzeStudentPerformanceOutput {
   overallScore: number;
   strengths: string;
@@ -30,15 +29,21 @@ export interface AnalyzeStudentPerformanceOutput {
 
 export interface CurrentQuizData {
   topic: MathTopic;
+  yearLevel: YearLevel; // Added yearLevel
   numQuestions: number;
   questions: QuestionWithAnswer[]; 
-  answers: string[]; // Stores student's answers
+  answers: string[];
   studentName: string;
 }
 
-export interface QuizAttempt extends Omit<CurrentQuizData, 'studentName'> { // studentName is part of CurrentQuizData, but often less relevant for long-term storage unless multiple users are tracked
+export interface QuizAttempt { // Omit removed, explicitly define fields
   id: string;
   date: string; // ISO string
-  analysis: AnalyzeStudentPerformanceOutput; // This will now have the detailed structure
-  studentName: string; // Explicitly include if needed per attempt record
+  topic: MathTopic;
+  yearLevel: YearLevel; // Added yearLevel
+  numQuestions: number;
+  questions: QuestionWithAnswer[];
+  answers: string[];
+  studentName: string;
+  analysis: AnalyzeStudentPerformanceOutput;
 }

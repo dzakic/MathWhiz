@@ -12,16 +12,17 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { analyzePerformanceAction } from "@/actions/quizActions";
-import { STUDENT_NAME, MathTopic, LOCAL_STORAGE_CURRENT_RESULT_KEY } from "@/lib/constants";
+import { STUDENT_NAME, LOCAL_STORAGE_CURRENT_RESULT_KEY, type YearLevel, type MathTopic } from "@/lib/constants";
 import type { CurrentQuizData, QuizQuestionFormat, QuestionWithAnswer } from "@/types";
 
 interface QuizFormProps {
   topic: MathTopic;
+  yearLevel: YearLevel;
   initialQuestions: QuestionWithAnswer[];
   numQuestions: number;
 }
 
-export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProps) {
+export function QuizForm({ topic, yearLevel, initialQuestions, numQuestions }: QuizFormProps) {
   const [questions, setQuestions] = useState<QuestionWithAnswer[]>(initialQuestions);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<string[]>(new Array(numQuestions).fill(""));
@@ -72,6 +73,7 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
 
       const currentQuizResult: CurrentQuizData & { analysis: any } = {
         topic,
+        yearLevel, // Added yearLevel
         numQuestions,
         questions, 
         answers, 
@@ -102,7 +104,7 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && !isLoading) {
-      event.preventDefault(); // Prevent default form submission if any
+      event.preventDefault();
       if (currentQuestionIndex < questions.length - 1) {
         handleNext();
       } else {
@@ -125,7 +127,7 @@ export function QuizForm({ topic, initialQuestions, numQuestions }: QuizFormProp
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Quiz: {topic}</CardTitle>
+        <CardTitle className="text-2xl">Quiz: {yearLevel} - {topic}</CardTitle>
         <CardDescription>Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>
         <Progress value={progressPercentage} className="w-full mt-2" />
       </CardHeader>

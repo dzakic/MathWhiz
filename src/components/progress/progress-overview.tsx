@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { LOCAL_STORAGE_PROGRESS_KEY } from "@/lib/constants";
 import type { QuizAttempt, QuestionWithAnswer, DetailedQuestionAnalysisItem } from "@/types";
 import { format } from "date-fns";
-import { BarChart3, CheckCircle, ListChecks, Star, TrendingDown, TrendingUp, CheckCircle2, XCircle, Lightbulb } from "lucide-react";
+import { BarChart3, CheckCircle, ListChecks, Star, TrendingDown, TrendingUp, CheckCircle2, XCircle, Lightbulb, CalendarDays } from "lucide-react"; // Added CalendarDays
 
 export function ProgressOverview() {
   const [progress, setProgress] = useState<QuizAttempt[]>([]);
@@ -27,10 +27,9 @@ export function ProgressOverview() {
             typeof item === 'object' && 
             item !== null && 
             'id' in item && 
-            'analysis' in item && // analysis must exist
-            // Validate analysis.detailedQuestionAnalysis if it exists (for newer data)
-            // Older data might not have detailedQuestionAnalysis, so we don't strictly require it here for basic listing
-            // but its presence and structure will be checked during rendering if used.
+            'topic' in item && // Added topic check
+            'yearLevel' in item && // Added yearLevel check
+            'analysis' in item &&
             Array.isArray(item.questions) && 
             item.questions.every(q => typeof q === 'object' && q !== null && typeof q.question === 'string' && typeof q.correctAnswer === 'string') &&
             Array.isArray(item.answers)
@@ -97,10 +96,8 @@ export function ProgressOverview() {
         <ScrollArea className="h-[600px] pr-4">
           <Accordion type="multiple" className="w-full space-y-4">
             {progress.map((attempt) => {
-              const overallScore = attempt.analysis?.overallScore ?? 0; // analysis might be null for very old/corrupt data
+              const overallScore = attempt.analysis?.overallScore ?? 0;
               const scoreColor = overallScore >= 70 ? "bg-green-500" : overallScore >= 40 ? "bg-yellow-500" : "bg-red-500";
-              
-              // Check if detailedQuestionAnalysis exists and is an array
               const hasDetailedAnalysis = attempt.analysis && Array.isArray(attempt.analysis.detailedQuestionAnalysis);
 
               return (
@@ -108,10 +105,11 @@ export function ProgressOverview() {
                   <AccordionTrigger className="p-4 hover:no-underline text-left">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-2">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-primary">{attempt.topic}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(attempt.date), "MMMM d, yyyy 'at' h:mm a")}
-                        </p>
+                        <h3 className="text-lg font-semibold text-primary">{attempt.yearLevel} - {attempt.topic}</h3>
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                           <CalendarDays className="mr-1.5 h-4 w-4" />
+                           {format(new Date(attempt.date), "MMMM d, yyyy 'at' h:mm a")}
+                        </div>
                       </div>
                       <Badge className={`text-base px-3 py-1 text-white ${scoreColor}`}>
                         Score: {overallScore}%
@@ -121,15 +119,15 @@ export function ProgressOverview() {
                   <AccordionContent className="p-4 bg-background/50">
                     <div className="space-y-3">
                       <div>
-                        <h4 className="font-semibold flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-green-500" />Strengths:</h4>
+                        <h4 className="font-semibold flex items-center text-sm"><CheckCircle className="mr-2 h-4 w-4 text-green-500" />Strengths:</h4>
                         <p className="text-sm text-muted-foreground pl-6">{attempt.analysis?.strengths || "N/A"}</p>
                       </div>
                       <div>
-                        <h4 className="font-semibold flex items-center"><TrendingDown className="mr-2 h-4 w-4 text-red-500" />Weaknesses:</h4>
+                        <h4 className="font-semibold flex items-center text-sm"><TrendingDown className="mr-2 h-4 w-4 text-red-500" />Weaknesses:</h4>
                         <p className="text-sm text-muted-foreground pl-6">{attempt.analysis?.weaknesses || "N/A"}</p>
                       </div>
                       <div>
-                        <h4 className="font-semibold flex items-center"><TrendingUp className="mr-2 h-4 w-4 text-blue-500" />Topics to Focus On:</h4>
+                        <h4 className="font-semibold flex items-center text-sm"><TrendingUp className="mr-2 h-4 w-4 text-blue-500" />Topics to Focus On:</h4>
                         <p className="text-sm text-muted-foreground pl-6">{attempt.analysis?.topicsToFocusOn || "N/A"}</p>
                       </div>
                       <details className="mt-2">
@@ -162,10 +160,8 @@ export function ProgressOverview() {
                               </li>
                             ))
                           ) : (
-                            // Fallback for older data without detailedQuestionAnalysis
                             (attempt.questions || []).map((q: QuestionWithAnswer, i: number) => {
                               const userAnswer = (attempt.answers && attempt.answers[i]) || "Not answered";
-                              // Simple fallback comparison for older data
                               const isCorrectFallback = q.correctAnswer && userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
                               return (
                                 <li key={i} className="p-3 border rounded-md bg-card space-y-1 shadow-sm">

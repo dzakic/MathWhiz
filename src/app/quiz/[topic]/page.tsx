@@ -70,20 +70,38 @@ export default async function QuizPage({ params, searchParams }: QuizPageProps) 
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
 
-  const topicParam = resolvedParams.topic.charAt(0).toUpperCase() + resolvedParams.topic.slice(1);
+  const topicParamFromPath = resolvedParams.topic;
+  let decodedTopicName = topicParamFromPath;
+  try {
+    // Dynamic segments from Next.js are usually already decoded.
+    // However, if it still contains encoding (e.g. %20), decodeURIComponent will handle it.
+    // If it's already decoded (e.g. "problem solving"), decodeURIComponent won't change it.
+    decodedTopicName = decodeURIComponent(topicParamFromPath);
+  } catch (e) {
+    console.error("Error decoding topic parameter:", e);
+    // Fallback to the raw param if decoding fails, though this is unlikely
+    decodedTopicName = topicParamFromPath;
+  }
+
+  const foundTopic = MATH_TOPICS.find(
+    (t) => t.toLowerCase() === decodedTopicName.toLowerCase()
+  );
+
+  if (!foundTopic) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-2xl font-bold text-destructive">Invalid Topic</h1>
+        <p>The selected topic "{decodedTopicName}" (from path "{topicParamFromPath}") is not recognized.</p>
+      </div>
+    );
+  }
+  
+  const topic = foundTopic; // Use the correctly cased topic from MATH_TOPICS
+
   const numQuestionsParam = resolvedSearchParams.numQuestions
     ? parseInt(resolvedSearchParams.numQuestions as string)
     : NUM_QUESTIONS_OPTIONS[0];
   const yearLevelParam = resolvedSearchParams.year as string;
-
-  if (!MATH_TOPICS.includes(topicParam as MathTopic)) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-2xl font-bold text-destructive">Invalid Topic</h1>
-        <p>The selected topic "{topicParam}" is not recognized.</p>
-      </div>
-    );
-  }
   
   if (!yearLevelParam || !YEAR_LEVELS.includes(yearLevelParam as YearLevel)) {
     return (
@@ -94,7 +112,6 @@ export default async function QuizPage({ params, searchParams }: QuizPageProps) 
     );
   }
   
-  const topic = topicParam as MathTopic;
   const numQuestions = NUM_QUESTIONS_OPTIONS.includes(numQuestionsParam as any) ? numQuestionsParam : NUM_QUESTIONS_OPTIONS[0];
   const yearLevel = yearLevelParam as YearLevel;
 
@@ -117,10 +134,25 @@ export default async function QuizPage({ params, searchParams }: QuizPageProps) 
 export async function generateMetadata({ params, searchParams }: QuizPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  const topic = resolvedParams.topic.charAt(0).toUpperCase() + resolvedParams.topic.slice(1);
+
+  const topicParamFromPath = resolvedParams.topic;
+  let decodedTopicName = topicParamFromPath;
+  try {
+    decodedTopicName = decodeURIComponent(topicParamFromPath);
+  } catch (e) {
+    console.error("Error decoding topic parameter for metadata:", e);
+    decodedTopicName = topicParamFromPath;
+  }
+  
+  const foundTopic = MATH_TOPICS.find(
+    (t) => t.toLowerCase() === decodedTopicName.toLowerCase()
+  );
+
+  const displayTopic = foundTopic || "Invalid Topic";
   const yearLevel = resolvedSearchParams.year as string || "Selected Year";
+  
   return {
-    title: `Math Whiz Quiz: ${yearLevel} - ${topic}`,
-    description: `Take a ${yearLevel} math quiz on ${topic}.`,
+    title: `Math Whiz Quiz: ${yearLevel} - ${displayTopic}`,
+    description: `Take a ${yearLevel} math quiz on ${displayTopic}.`,
   };
 }
